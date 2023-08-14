@@ -54,9 +54,9 @@ class RegisterView(CreateAPIView):
         except Exception as e:
             return Response(
                 {
-                    'status': str(e),
+                    'status': 'error',
                     'data': None,
-                    'details': None,
+                    'details': str(e),
                  },
                 status=400
             )
