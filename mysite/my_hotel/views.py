@@ -1,5 +1,4 @@
 from typing import List
-
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
@@ -53,11 +52,24 @@ class RegisterView(CreateAPIView):
         try:
             validate_password(password)
         except Exception as e:
-            return Response({'error': str(e)}, status=400)
+            return Response(
+                {
+                    'status': str(e),
+                    'data': None,
+                    'details': None,
+                 },
+                status=400
+            )
 
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        return Response({'detail': 'Registration successful'})
+        return Response(
+            {
+                'status': 'success',
+                'data': None,
+                'details': 'Registration successful'
+            }
+        )
 
 
 class LoginView(CreateAPIView):
@@ -74,10 +86,21 @@ class LoginView(CreateAPIView):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request=self.request, user=user)
-            return Response({
-                'user': UserSerializer(user).data,
-            })
-        return Response({'error': 'Invalid credentials'}, status=401)
+            return Response(
+                {
+                    'status': 'success',
+                    'user': UserSerializer(user).data,
+                    'details': None,
+                }
+            )
+        return Response(
+            {
+                'status': 'error',
+                'data': None,
+                'details': 'Invalid credentials'
+            },
+            status=401
+        )
 
 
 class LogoutView(APIView):
@@ -88,7 +111,13 @@ class LogoutView(APIView):
 
     def get(self, request) -> Response:
         logout(request)
-        return Response({'detail': 'Logged out successfully'})
+        return Response(
+            {
+                'status': 'success',
+                'data': None,
+                'details': 'Logged out successfully'
+            }
+        )
 
 
 class UserBookingsView(ListAPIView):
@@ -117,7 +146,11 @@ class CancelBookingView(CreateAPIView):
                 booking = Booking.objects.get(id=pk)
             except Booking.DoesNotExist:
                 return Response(
-                    {'detail': 'Указанная бронь не найдена.'},
+                    {
+                        'status': 'error',
+                        'data': None,
+                        'details': 'Указанная бронь не найдена.'
+                    },
                     status=status.HTTP_400_BAD_REQUEST
                 )
         else:
@@ -125,18 +158,30 @@ class CancelBookingView(CreateAPIView):
                 booking = Booking.objects.get(id=pk, user=request.user)
             except Booking.DoesNotExist:
                 return Response(
-                    {'detail': 'Указанная бронь не найдена.'},
+                    {
+                        'status': 'error',
+                        'data': None,
+                        'details': 'Указанная бронь не найдена.'
+                    },
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
         if booking.status == 'cancelled':
             return Response(
-                {'detail': 'Бронь уже отменена.'},
+                {
+                    'status': 'error',
+                    'data': None,
+                    'details': 'Бронь уже отменена.'
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
         if booking.status == 'confirmed':
             return Response(
-                {'detail': 'Нельзя изменить бронь.'},
+                {
+                    'status': 'error',
+                    'data': None,
+                    'details': 'Нельзя изменить бронь.'
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -144,7 +189,11 @@ class CancelBookingView(CreateAPIView):
         booking.save()
 
         return Response(
-            {'detail': 'Бронь успешно отменена.'},
+            {
+                'status': 'success',
+                'data': None,
+                'detail': 'Бронь успешно отменена.'
+            },
             status=status.HTTP_200_OK
         )
 
@@ -164,7 +213,11 @@ class CreateBookingView(CreateAPIView):
 
         if start_date > end_date:
             return Response(
-                {'detail': 'Дата начала должна быть раньше даты окончания.'},
+                {
+                    'status': 'error',
+                    'data': None,
+                    'detail': 'Дата начала должна быть раньше даты окончания.'
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -180,12 +233,20 @@ class CreateBookingView(CreateAPIView):
             )
             if existing_bookings.exists():
                 return Response(
-                    {'detail': 'Комната уже забронирована на указанные даты.'},
+                    {
+                        'status': 'error',
+                        'data': None,
+                        'detail': 'Комната уже забронирована на указанные даты.'
+                    },
                     status=status.HTTP_400_BAD_REQUEST
                 )
         except Room.DoesNotExist:
             return Response(
-                {'detail': 'Указанная комната не найдена.'},
+                {
+                    'status': 'error',
+                    'data': None,
+                    'detail': 'Указанная комната не найдена.'
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -197,7 +258,11 @@ class CreateBookingView(CreateAPIView):
         )
 
         return Response(
-            {'detail': 'Бронь успешно создана.'},
+            {
+                'status': 'success',
+                'data': None,
+                'detail': 'Бронь успешно создана.'
+            },
             status=status.HTTP_201_CREATED
         )
 
